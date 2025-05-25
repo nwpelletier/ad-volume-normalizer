@@ -11,7 +11,6 @@ chrome.storage.sync.get(["twitchEnabled"], (data) => {
   }
 });
 
-// Listen for changes to twitchEnabled setting
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && changes.twitchEnabled) {
     twitchEnabled = changes.twitchEnabled.newValue;
@@ -19,32 +18,34 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// Set volume slider value and trigger input event to update Twitch player
 function setVolume(volume) {
   const slider = document.querySelector(volumeSliderSelector);
   if (slider) {
     slider.value = volume;
     slider.dispatchEvent(new Event("input", { bubbles: true }));
+    console.log("Volume set to", volume);
+  } else {
+    console.warn("Volume slider not found");
   }
 }
 
-// Get current volume from slider
 function getVolume() {
   const slider = document.querySelector(volumeSliderSelector);
   return slider ? parseFloat(slider.value) : null;
 }
 
-// Listen for manual user changes on the volume slider
 function setupUserVolumeListener() {
   const slider = document.querySelector(volumeSliderSelector);
-  if (!slider) return;
+  if (!slider) {
+    console.warn("Volume slider not found, cannot listen for user input");
+    return;
+  }
 
   slider.addEventListener("input", () => {
     userPreferredVolume = parseFloat(slider.value);
     autoThrottleEnabled = false; // Disable auto throttling on manual change
     console.log("User changed volume to", userPreferredVolume);
 
-    // Re-enable auto throttling after 15 seconds of no manual changes
     clearTimeout(window.volumeThrottleTimeout);
     window.volumeThrottleTimeout = setTimeout(() => {
       autoThrottleEnabled = true;
@@ -53,35 +54,54 @@ function setupUserVolumeListener() {
   });
 }
 
-// When an ad is detected, throttle volume back to preferred if auto throttle is enabled and twitchEnabled is true
+// Try multiple selectors for ad detection, fallback method
+function isAdPlaying() {
+  // Primary selector: video ad countdown
+  if (document.querySelector('[data-a-target="video-ad-countdown"]')) {
+    return true;
+  }
+  // Backup selector: ad container or overlay Twitch may use (update if needed)
+  if (
+    document.querySelector(".player-ad-overlay") ||
+    document.querySelector(".ad-banner")
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function throttleVolumeDuringAd() {
-  if (!twitchEnabled) return; // Check if toggle enabled
-  if (!autoThrottleEnabled) return;
+  if (!twitchEnabled) {
+    console.log("Throttle skipped: twitchEnabled is false");
+    return;
+  }
+  if (!autoThrottleEnabled) {
+    console.log("Throttle skipped: autoThrottle disabled by user");
+    return;
+  }
 
   if (userPreferredVolume === null) {
-    userPreferredVolume = getVolume() || 0.5; // fallback default if none saved
+    userPreferredVolume = getVolume() || 0.5; // fallback default
+    console.log("Using fallback userPreferredVolume:", userPreferredVolume);
   }
   setVolume(userPreferredVolume);
   console.log("Auto throttling volume to", userPreferredVolume);
 }
 
-// Check if an ad is currently playing by detecting ad countdown element
 function checkForAdAndThrottle() {
-  const adElement = document.querySelector(
-    '[data-a-target="video-ad-countdown"]'
-  );
-  if (adElement) {
+  if (isAdPlaying()) {
+    console.log("Ad detected — throttling volume");
     throttleVolumeDuringAd();
+  } else {
+    // Optional: you can log ad absence here but it may spam console
+    // console.log("No ad detected");
   }
 }
 
-// Initialize script
 function init() {
+  console.log("Content script loaded");
   setupUserVolumeListener();
-
-  // Periodically check for ads every second
   setInterval(checkForAdAndThrottle, 1000);
 }
 
-// Run
 init();

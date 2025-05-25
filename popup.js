@@ -6,13 +6,14 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.sync.get(["twitchEnabled"], (data) => {
     if (data.twitchEnabled !== undefined) {
       twitchToggle.checked = data.twitchEnabled;
+      console.log("Loaded twitchEnabled:", data.twitchEnabled);
     }
   });
 
-  // Save twitchEnabled when Save button clicked
   saveBtn.addEventListener("click", () => {
     chrome.storage.sync.set({ twitchEnabled: twitchToggle.checked }, () => {
       saveBtn.textContent = "Saved!";
+      console.log("Saved twitchEnabled:", twitchToggle.checked);
       setTimeout(() => (saveBtn.textContent = "Save"), 1000);
     });
   });
