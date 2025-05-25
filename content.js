@@ -1,32 +1,47 @@
 // content.js
 
-let twitchEnabled = true; // default
+let twitchEnabled = true;
+let adVolumeMode = "mute"; // "mute", "quiet", "off"
 let userPreferredVolume = null;
-let autoThrottleEnabled = true;
+let adIsPlaying = false;
+
 const volumeSliderSelector = 'input[data-a-target="player-volume-slider"]';
 
-// Request current twitchEnabled from background on load
-chrome.runtime.sendMessage({ type: "getTwitchEnabled" }, (response) => {
-  if (response && typeof response.value === "boolean") {
-    twitchEnabled = response.value;
-    console.log("Initial twitchEnabled:", twitchEnabled);
+// Load settings from storage
+chrome.storage.sync.get(
+  ["twitchEnabled", "adVolumeMode", "userPreferredVolume"],
+  (data) => {
+    if (data.twitchEnabled !== undefined) twitchEnabled = data.twitchEnabled;
+    if (data.adVolumeMode) adVolumeMode = data.adVolumeMode;
+    if (data.userPreferredVolume !== undefined)
+      userPreferredVolume = data.userPreferredVolume;
+    console.log(
+      "Settings loaded:",
+      twitchEnabled,
+      adVolumeMode,
+      userPreferredVolume
+    );
+  }
+);
+
+// Listen for storage changes
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync") {
+    if (changes.twitchEnabled) twitchEnabled = changes.twitchEnabled.newValue;
+    if (changes.adVolumeMode) adVolumeMode = changes.adVolumeMode.newValue;
+    if (changes.userPreferredVolume)
+      userPreferredVolume = changes.userPreferredVolume.newValue;
   }
 });
 
-// Listen for updates from background
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "updateTwitchEnabled") {
-    twitchEnabled = message.value;
-    console.log("twitchEnabled updated to:", twitchEnabled);
-  }
-});
-
-function setVolume(volume) {
+function setVolume(v) {
   const slider = document.querySelector(volumeSliderSelector);
   if (slider) {
-    slider.value = volume;
+    slider.value = v;
     slider.dispatchEvent(new Event("input", { bubbles: true }));
-    console.log("Volume set to", volume);
+    console.log("Volume set to", v);
+  } else {
+    console.warn("Volume slider not found");
   }
 }
 
@@ -35,56 +50,59 @@ function getVolume() {
   return slider ? parseFloat(slider.value) : null;
 }
 
-function setupUserVolumeListener() {
-  const slider = document.querySelector(volumeSliderSelector);
-  if (!slider) {
-    console.warn("Volume slider not found, cannot listen for user input");
-    return;
+function onUserVolumeChange() {
+  const vol = getVolume();
+  if (vol !== null) {
+    userPreferredVolume = vol;
+    chrome.storage.sync.set({ userPreferredVolume: vol });
+    console.log("User volume changed to", vol);
   }
-
-  slider.addEventListener("input", () => {
-    userPreferredVolume = parseFloat(slider.value);
-    autoThrottleEnabled = false;
-    console.log("User changed volume to", userPreferredVolume);
-
-    clearTimeout(window.volumeThrottleTimeout);
-    window.volumeThrottleTimeout = setTimeout(() => {
-      autoThrottleEnabled = true;
-      console.log("Auto throttle re-enabled");
-    }, 15000);
-  });
 }
 
+// Ad detection function
 function isAdPlaying() {
-  if (document.querySelector('[data-a-target="video-ad-countdown"]'))
-    return true;
-  if (document.querySelector(".player-ad-overlay")) return true;
-  if (document.querySelector(".ad-banner")) return true;
-  return false;
+  return !!document.querySelector('[data-a-target="video-ad-countdown"]');
 }
 
-function throttleVolumeDuringAd() {
-  if (!twitchEnabled) return;
-  if (!autoThrottleEnabled) return;
+function checkAd() {
+  const adPlaying = isAdPlaying();
 
-  if (userPreferredVolume === null) {
-    userPreferredVolume = getVolume() || 0.5;
+  if (adPlaying && !adIsPlaying) {
+    // Ad just started
+    adIsPlaying = true;
+    if (twitchEnabled && adVolumeMode !== "off") {
+      if (userPreferredVolume === null)
+        userPreferredVolume = getVolume() || 0.5;
+
+      let targetVol = 0;
+      if (adVolumeMode === "quiet") targetVol = 0.2;
+      else if (adVolumeMode === "mute") targetVol = 0;
+
+      setVolume(targetVol);
+      console.log(`Ad started: throttling volume to ${targetVol}`);
+    }
+  } else if (!adPlaying && adIsPlaying) {
+    // Ad just ended
+    adIsPlaying = false;
+    if (
+      twitchEnabled &&
+      adVolumeMode !== "off" &&
+      userPreferredVolume !== null
+    ) {
+      setVolume(userPreferredVolume);
+      console.log(`Ad ended: restoring volume to ${userPreferredVolume}`);
+    }
   }
-  setVolume(userPreferredVolume);
-  console.log("Auto throttling volume to", userPreferredVolume);
 }
 
-function checkForAdAndThrottle() {
-  if (isAdPlaying()) {
-    console.log("Ad detected — throttling volume");
-    throttleVolumeDuringAd();
+function setup() {
+  const slider = document.querySelector(volumeSliderSelector);
+  if (slider) {
+    slider.addEventListener("input", onUserVolumeChange);
+  } else {
+    console.warn("Volume slider not found at setup");
   }
+  setInterval(checkAd, 1000);
 }
 
-function init() {
-  console.log("Content script loaded");
-  setupUserVolumeListener();
-  setInterval(checkForAdAndThrottle, 1000);
-}
-
-init();
+setup();
