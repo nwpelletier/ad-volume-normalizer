@@ -1,20 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "Ad Volume Throttler",
+  "name": "Ad Volume Fixer",
   "version": "1.0",
-  "description": "Auto-adjusts volume during loud ads on Twitch and YouTube.",
-  "permissions": ["scripting", "tabs"],
-  "host_permissions": ["https://www.twitch.tv/*", "https://www.youtube.com/*"],
+  "permissions": ["storage", "tabs", "scripting"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.twitch.tv/*"],
-      "js": ["content.js"]
-    },
-    {
-      "matches": ["https://www.youtube.com/*"],
+      "matches": ["*://*.twitch.tv/*"],
       "js": ["content.js"]
     }
   ]
