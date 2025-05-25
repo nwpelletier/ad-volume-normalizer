@@ -1,7 +1,5 @@
-// content.js
-
 let twitchEnabled = true;
-let adVolumeMode = "mute"; // "mute", "quiet", "off"
+let adVolumeMode = "mute"; // Options: "mute", "quiet", "off"
 let userPreferredVolume = null;
 let adIsPlaying = false;
 
@@ -13,14 +11,14 @@ chrome.storage.sync.get(
   (data) => {
     if (data.twitchEnabled !== undefined) twitchEnabled = data.twitchEnabled;
     if (data.adVolumeMode) adVolumeMode = data.adVolumeMode;
-    if (data.userPreferredVolume !== undefined)
+    if (data.userPreferredVolume !== undefined) {
       userPreferredVolume = data.userPreferredVolume;
-    console.log(
-      "Settings loaded:",
+    }
+    console.log("Settings loaded:", {
       twitchEnabled,
       adVolumeMode,
-      userPreferredVolume
-    );
+      userPreferredVolume,
+    });
   }
 );
 
@@ -34,6 +32,18 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+// Respond to messages from background.js
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "updateTwitchEnabled") {
+    twitchEnabled = message.value;
+    console.log(
+      "Twitch throttle setting updated from background:",
+      twitchEnabled
+    );
+  }
+});
+
+// Set volume using the Twitch slider
 function setVolume(v) {
   const slider = document.querySelector(volumeSliderSelector);
   if (slider) {
@@ -45,11 +55,13 @@ function setVolume(v) {
   }
 }
 
+// Get current volume
 function getVolume() {
   const slider = document.querySelector(volumeSliderSelector);
   return slider ? parseFloat(slider.value) : null;
 }
 
+// Called when user changes volume manually
 function onUserVolumeChange() {
   const vol = getVolume();
   if (vol !== null) {
@@ -59,20 +71,22 @@ function onUserVolumeChange() {
   }
 }
 
-// Ad detection function
+// Detect if ad is playing
 function isAdPlaying() {
   return !!document.querySelector('[data-a-target="video-ad-countdown"]');
 }
 
+// Check ad status and adjust volume accordingly
 function checkAd() {
   const adPlaying = isAdPlaying();
 
   if (adPlaying && !adIsPlaying) {
-    // Ad just started
     adIsPlaying = true;
+
     if (twitchEnabled && adVolumeMode !== "off") {
-      if (userPreferredVolume === null)
+      if (userPreferredVolume === null) {
         userPreferredVolume = getVolume() || 0.5;
+      }
 
       let targetVol = 0;
       if (adVolumeMode === "quiet") targetVol = 0.2;
@@ -82,8 +96,8 @@ function checkAd() {
       console.log(`Ad started: throttling volume to ${targetVol}`);
     }
   } else if (!adPlaying && adIsPlaying) {
-    // Ad just ended
     adIsPlaying = false;
+
     if (
       twitchEnabled &&
       adVolumeMode !== "off" &&
@@ -95,14 +109,27 @@ function checkAd() {
   }
 }
 
+// Setup slider listener and ad check interval
 function setup() {
   const slider = document.querySelector(volumeSliderSelector);
   if (slider) {
     slider.addEventListener("input", onUserVolumeChange);
+    setInterval(checkAd, 1000);
+    console.log("Setup complete");
   } else {
     console.warn("Volume slider not found at setup");
   }
-  setInterval(checkAd, 1000);
 }
 
-setup();
+// Wait until the Twitch player is ready
+function waitForSliderAndSetup() {
+  const slider = document.querySelector(volumeSliderSelector);
+  if (slider) {
+    setup();
+  } else {
+    console.log("Waiting for volume slider...");
+    setTimeout(waitForSliderAndSetup, 500);
+  }
+}
+
+waitForSliderAndSetup();

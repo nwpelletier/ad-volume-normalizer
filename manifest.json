@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Ad Volume Fixer",
-  "version": "1.0",
-  "description": "Throttle Twitch ad volume based on user preference.",
+  "name": "Twitch Ad Volume Throttle",
+  "version": "1.2",
+  "description": "Automatically mute or reduce volume during Twitch ads.",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["*://*.twitch.tv/*"],
   "background": {

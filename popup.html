@@ -2,35 +2,26 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Ad Volume Fixer</title>
+    <title>Twitch Ad Volume</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Ad Volume Fixer</h1>
-
-    <label>
-      <input type="checkbox" id="twitch-toggle" checked />
-      Enable on Twitch
-    </label>
-
-    <fieldset>
-      <legend>Ad Volume Mode</legend>
-      <label>
-        <input type="radio" name="adVolumeMode" value="mute" checked />
-        Mute
+    <div class="popup-container">
+      <h2>Twitch Ad Volume</h2>
+      <label class="switch">
+        <input type="checkbox" id="enableToggle" />
+        <span class="slider round"></span>
       </label>
-      <label>
-        <input type="radio" name="adVolumeMode" value="quiet" />
-        Quiet (0.2)
-      </label>
-      <label>
-        <input type="radio" name="adVolumeMode" value="off" />
-        Off
-      </label>
-    </fieldset>
+      <p class="label">Enable Throttle</p>
 
-    <button id="save-btn">Save Settings</button>
-
+      <div class="mode-select">
+        <label
+          ><input type="radio" name="mode" value="mute" checked /> Mute</label
+        >
+        <label><input type="radio" name="mode" value="quiet" /> Quiet</label>
+        <label><input type="radio" name="mode" value="off" /> Off</label>
+      </div>
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>

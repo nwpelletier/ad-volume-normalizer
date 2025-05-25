@@ -1,35 +1,29 @@
-// popup.js
-
 document.addEventListener("DOMContentLoaded", () => {
-  const twitchToggle = document.getElementById("twitch-toggle");
-  const saveBtn = document.getElementById("save-btn");
-  const adVolumeRadios = document.querySelectorAll(
-    'input[name="adVolumeMode"]'
-  );
+  const enableToggle = document.getElementById("enableToggle");
+  const modeRadios = document.querySelectorAll('input[name="mode"]');
 
-  // Load saved settings
+  // Load settings from storage
   chrome.storage.sync.get(["twitchEnabled", "adVolumeMode"], (data) => {
-    if (data.twitchEnabled !== undefined)
-      twitchToggle.checked = data.twitchEnabled;
+    enableToggle.checked = data.twitchEnabled ?? true;
 
-    if (data.adVolumeMode) {
-      for (const radio of adVolumeRadios) {
-        radio.checked = radio.value === data.adVolumeMode;
+    for (const radio of modeRadios) {
+      if (radio.value === data.adVolumeMode) {
+        radio.checked = true;
       }
     }
   });
 
-  saveBtn.addEventListener("click", () => {
-    const selectedMode = Array.from(adVolumeRadios).find(
-      (r) => r.checked
-    )?.value;
+  // Toggle setting
+  enableToggle.addEventListener("change", () => {
+    chrome.storage.sync.set({ twitchEnabled: enableToggle.checked });
+  });
 
-    chrome.storage.sync.set(
-      { twitchEnabled: twitchToggle.checked, adVolumeMode: selectedMode },
-      () => {
-        saveBtn.textContent = "Saved!";
-        setTimeout(() => (saveBtn.textContent = "Save Settings"), 1500);
+  // Mode change
+  modeRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (radio.checked) {
+        chrome.storage.sync.set({ adVolumeMode: radio.value });
       }
-    );
+    });
   });
 });
