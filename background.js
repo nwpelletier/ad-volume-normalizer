@@ -3,12 +3,17 @@
 // Listen for storage changes and broadcast to content scripts
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && changes.twitchEnabled !== undefined) {
-    chrome.tabs.query({}, (tabs) => {
+    chrome.tabs.query({ url: "*://*.twitch.tv/*" }, (tabs) => {
       for (const tab of tabs) {
-        chrome.tabs.sendMessage(tab.id, {
-          type: "updateTwitchEnabled",
-          value: changes.twitchEnabled.newValue,
-        });
+        chrome.tabs
+          .sendMessage(tab.id, {
+            type: "updateTwitchEnabled",
+            value: changes.twitchEnabled.newValue,
+          })
+          .catch((err) => {
+            // This catch prevents unhandled promise rejection if tab doesn't have listener
+            // Just ignore if no receiver
+          });
       }
     });
   }
