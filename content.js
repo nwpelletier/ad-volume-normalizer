@@ -1,5 +1,5 @@
 let twitchEnabled = true;
-let adVolumeMode = "mute"; // "mute", "quiet", "off"
+let adVolumeMode = "mute";
 let userPreferredVolume = null;
 let adIsPlaying = false;
 
@@ -67,7 +67,7 @@ function checkAd() {
     adIsPlaying = true;
     console.log("Ad detected");
 
-    if (twitchEnabled && adVolumeMode !== "off") {
+    if (twitchEnabled && adVolumeMode !== "vol-default") {
       const currentVol = getVolume();
       if (currentVol !== null) {
         userPreferredVolume = currentVol;
@@ -76,8 +76,17 @@ function checkAd() {
       }
 
       let targetVol = 0;
-      if (adVolumeMode === "quiet") targetVol = 0.2;
-      else if (adVolumeMode === "mute") targetVol = 0;
+      switch (adVolumeMode) {
+        case "vol-dim":
+          targetVol = Math.max(0, Math.min(1, userPreferredVolume / 2));
+          break;
+        case "vol-mute":
+          targetVol = 0;
+          break;
+        case "vol-default":
+        default:
+          return;
+      }
 
       setVolume(targetVol);
       console.log(`Throttled volume during ad to: ${targetVol}`);
@@ -88,7 +97,7 @@ function checkAd() {
 
     if (
       twitchEnabled &&
-      adVolumeMode !== "off" &&
+      adVolumeMode !== "vol-default" &&
       userPreferredVolume !== null
     ) {
       setVolume(userPreferredVolume);
@@ -97,13 +106,20 @@ function checkAd() {
   }
 }
 
-function setup() {
+function waitForVolumeSlider(attempts = 0) {
   const slider = document.querySelector(volumeSliderSelector);
   if (slider) {
     slider.addEventListener("input", onUserVolumeChange);
+    console.log("Volume slider found and event listener attached.");
+  } else if (attempts < 20) {
+    setTimeout(() => waitForVolumeSlider(attempts + 1), 500);
   } else {
-    console.warn("Volume slider not found at setup");
+    console.warn("Volume slider not found after multiple attempts.");
   }
+}
+
+function setup() {
+  waitForVolumeSlider();
   setInterval(checkAd, 1000);
 }
 

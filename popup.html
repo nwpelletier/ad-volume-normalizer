@@ -2,24 +2,27 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Twitch Ad Volume</title>
+    <title>WhisperAds</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="popup-container">
-      <h2>TWITCH AD VOLUME</h2>
+      <h2>WhisperAds</h2>
       <label class="switch">
         <input type="checkbox" id="enableToggle" />
         <span class="slider round"></span>
       </label>
-      <p class="label">Enable Throttle</p>
+      <p class="label">On/Off</p>
 
       <div class="mode-select">
         <label
-          ><input type="radio" name="mode" value="mute" checked /> Mute</label
+          ><input type="radio" name="mode" value="vol-mute" checked />
+          Mute</label
         >
-        <label><input type="radio" name="mode" value="quiet" /> Quiet</label>
-        <label><input type="radio" name="mode" value="off" /> Off</label>
+        <label><input type="radio" name="mode" value="vol-dim" /> Dim</label>
+        <label
+          ><input type="radio" name="mode" value="vol-default" /> Default</label
+        >
       </div>
     </div>
     <script src="popup.js"></script>
