@@ -1,6 +1,6 @@
-# Twitch Ad Volume Throttle (WIP)
+# WhisperAds
 
-A work-in-progress Chrome extension that automatically mutes or reduces volume during Twitch ads.
+Chrome extension that automatically mutes or reduces volume during Twitch ads.
 
 ## Features
 
