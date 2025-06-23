@@ -9,16 +9,6 @@ Chrome extension that automatically mutes or reduces volume during Twitch ads.
 - Simple toggle to enable/disable behavior (refresh once change is made)
 - Remembers your setting using Chrome sync storage
 
-## Installation (Developer Mode)
-
-Since this isn't published yet:
-
-1. Clone or download this repo.
-2. Open `chrome://extensions/` in Google Chrome.
-3. Enable **Developer mode** (top right toggle).
-4. Click **Load unpacked** and select the project folder.
-5. Navigate to [twitch.tv](https://www.twitch.tv) and try it out.
-
 ## Usage
 
 - Click the extension icon to open the popup.
