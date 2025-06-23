@@ -23,8 +23,11 @@ Chrome extension that automatically mutes or reduces volume during Twitch ads.
 
 ## Status
 
-🚧 This is a personal side project and is currently under development.  
-Expect bugs, unpolished UI, and limited ad-detection coverage.
+🚧 This is currently available on the Chrome Web Store.  I am currently
+reworking the UI so that it's a bit easier to use.  I also am working on 
+fixing a couple niche bugs to enhance user experience.  The extension
+in its current state works very reliably, and I recommend for now using the
+'mute' setting.
 
 ## License
 
